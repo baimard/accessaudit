@@ -20,6 +20,9 @@ class ShareService {
 		IShare::TYPE_DECK,
 	];
 
+	/** @var array<string, string> */
+	private array $displayNameCache = [];
+
 	public function __construct(
 		private IManager $shareManager,
 		private IUserManager $userManager,
@@ -90,13 +93,15 @@ class ShareService {
 		$node = $share->getNode();
 		$expiration = $share->getExpirationDate();
 		$created = $share->getShareTime();
+		$ownerUid = (string)$share->getShareOwner();
 
 		return [
 			'id' => (string)$share->getFullId(),
 			'shareType' => (int)$share->getShareType(),
 			'shareTypeLabel' => $this->typeLabel((int)$share->getShareType()),
 			'sharedWith' => (string)$share->getSharedWith(),
-			'owner' => (string)$share->getShareOwner(),
+			'owner' => $this->resolveDisplayName($ownerUid),
+			'ownerUid' => $ownerUid,
 			'initiator' => (string)$share->getSharedBy(),
 			'nodeId' => $node->getId(),
 			'path' => $node->getPath(),
@@ -111,6 +116,23 @@ class ShareService {
 			'createdAt' => $created?->format(DATE_ATOM),
 			'expiresAt' => $expiration?->format(DATE_ATOM),
 		];
+	}
+
+	private function resolveDisplayName(string $uid): string {
+		if ($uid === '') {
+			return '';
+		}
+
+		if (isset($this->displayNameCache[$uid])) {
+			return $this->displayNameCache[$uid];
+		}
+
+		$user = $this->userManager->get($uid);
+		$displayName = $user?->getDisplayName();
+
+		return $this->displayNameCache[$uid] = ($displayName !== null && $displayName !== '')
+			? $displayName
+			: $uid;
 	}
 
 	private function typeLabel(int $type): string {
