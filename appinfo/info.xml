@@ -5,17 +5,17 @@
 	<name>Nextcloud Access Audit</name>
 	<summary>Audit user group memberships and active file shares in Nextcloud.</summary>
 	<description>
-		Nextcloud Access Audit provides administrators with a centralized view of
+		Nextcloud Access Audit provides authorized users with a centralized view of
 		user group memberships and active file and folder shares.
 
 		The application helps identify users, authentication backends, group
 		memberships, internal shares, public links and other active sharing
 		permissions configured within the Nextcloud instance.
 
-		It is designed as a read-only auditing and reporting tool for Nextcloud
-		administrators.
+		It is designed as a read-only auditing and reporting tool whose access can
+		be restricted to selected groups through Nextcloud application settings.
 	</description>
-	<version>0.0.3</version>
+	<version>0.0.4</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author mail="contact@aimard.pro" homepage="https://github.com/baimard">Benjamin AIMARD</author>
 	<namespace>AccessAudit</namespace>
