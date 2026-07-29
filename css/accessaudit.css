@@ -1,6 +1,19 @@
 .accessaudit {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	height: calc(100vh - 50px);
 	padding: 24px;
-	max-width: 100%;
+	overflow-x: hidden;
+	overflow-y: auto;
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+}
+
+.accessaudit *,
+.accessaudit *::before,
+.accessaudit *::after {
+	box-sizing: border-box;
 }
 
 .accessaudit__header,
@@ -9,11 +22,16 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
+	min-width: 0;
 }
 
 .accessaudit__header {
 	justify-content: space-between;
 	margin-bottom: 20px;
+}
+
+.accessaudit__header > div {
+	min-width: 0;
 }
 
 .accessaudit__header h1 {
@@ -22,7 +40,13 @@
 	margin: 0 0 4px;
 }
 
+.accessaudit__header p {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
 .accessaudit__tabs {
+	flex-wrap: wrap;
 	border-bottom: 1px solid var(--color-border);
 	margin-bottom: 16px;
 }
@@ -44,27 +68,42 @@
 }
 
 .accessaudit__toolbar input[type="search"] {
-	min-width: 280px;
+	flex: 1 1 260px;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.accessaudit__toolbar select,
+.accessaudit__toolbar .button {
+	max-width: 100%;
 }
 
 .accessaudit__table-wrap {
-	overflow: auto;
+	width: 100%;
+	min-width: 0;
+	overflow: visible;
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
 }
 
 #accessaudit-table {
 	width: 100%;
+	max-width: 100%;
+	table-layout: fixed;
 	border-collapse: collapse;
-	white-space: nowrap;
 }
 
 #accessaudit-table th,
 #accessaudit-table td {
+	min-width: 0;
 	padding: 10px 12px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
 	vertical-align: top;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 #accessaudit-table th {
@@ -76,14 +115,45 @@
 
 .accessaudit__badge {
 	display: inline-block;
+	max-width: 100%;
 	padding: 3px 8px;
 	margin: 2px 4px 2px 0;
 	border-radius: 12px;
 	background: var(--color-background-dark);
+	white-space: normal;
+	overflow-wrap: anywhere;
 }
 
 #accessaudit-status {
 	min-height: 24px;
 	margin: 8px 0;
 	color: var(--color-text-maxcontrast);
+}
+
+@media (max-width: 768px) {
+	.accessaudit {
+		padding: 12px;
+	}
+
+	.accessaudit__header {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.accessaudit__header h1 {
+		font-size: 22px;
+	}
+
+	.accessaudit__header button,
+	.accessaudit__toolbar input,
+	.accessaudit__toolbar select,
+	.accessaudit__toolbar .button {
+		width: 100%;
+	}
+
+	#accessaudit-table th,
+	#accessaudit-table td {
+		padding: 8px;
+		font-size: 13px;
+	}
 }
