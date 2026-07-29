@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
 	'use strict';
 
-	const state = { section: 'users', rows: [], search: '', provider: '' };
+	const state = { section: 'users', rows: [], search: '', negate: false, provider: '' };
 	const table = document.getElementById('accessaudit-table');
 	const status = document.getElementById('accessaudit-status');
 	const search = document.getElementById('accessaudit-search');
+	const negate = document.getElementById('accessaudit-negate');
 	const provider = document.getElementById('accessaudit-provider');
 	const csv = document.getElementById('accessaudit-export-csv');
 	const json = document.getElementById('accessaudit-export-json');
@@ -31,9 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function filteredRows() {
-		const needle = state.search.toLowerCase();
+		const needle = state.search.trim().toLowerCase();
+
 		return state.rows.filter(row => {
-			const matchesSearch = !needle || JSON.stringify(row).toLowerCase().includes(needle);
+			const rowText = JSON.stringify(row).toLowerCase();
+			const containsNeedle = needle !== '' && rowText.includes(needle);
+			const matchesSearch = needle === '' || (state.negate ? !containsNeedle : containsNeedle);
 			const matchesProvider = state.section !== 'users' || !state.provider || row.provider === state.provider;
 			return matchesSearch && matchesProvider;
 		});
@@ -121,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	search.addEventListener('input', () => { state.search = search.value; render(); });
+	negate.addEventListener('change', () => { state.negate = negate.checked; render(); });
 	provider.addEventListener('change', () => { state.provider = provider.value; render(); });
 	document.getElementById('accessaudit-refresh').addEventListener('click', load);
 
