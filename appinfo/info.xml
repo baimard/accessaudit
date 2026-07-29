@@ -1,0 +1,54 @@
+```xml
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>accessaudit</id>
+
+	<name>Nextcloud Access Audit</name>
+
+	<summary>Audit user group memberships and active file shares in Nextcloud.</summary>
+
+	<description>
+		Nextcloud Access Audit provides administrators with a centralized view of
+		user group memberships and active file and folder shares.
+
+		The application helps identify users, authentication backends, group
+		memberships, internal shares, public links and other active sharing
+		permissions configured within the Nextcloud instance.
+
+		It is designed as a read-only auditing and reporting tool for Nextcloud
+		administrators.
+	</description>
+
+	<version>0.0.1</version>
+
+	<licence>AGPL-3.0-or-later</licence>
+
+	<author
+		mail="b.aimard@adacis.net"
+		homepage="https://github.com/adacis">Benjamin AIMARD</author>
+
+	<namespace>AccessAudit</namespace>
+
+	<category>security</category>
+	<category>tools</category>
+
+	<bugs>https://github.com/adacis/accessaudit/issues</bugs>
+	<repository type="git">https://github.com/adacis/accessaudit.git</repository>
+
+	<dependencies>
+		<nextcloud min-version="33" max-version="34"/>
+		<php min-version="8.1"/>
+	</dependencies>
+
+	<navigations>
+		<navigation>
+			<id>accessaudit</id>
+			<name>Access Audit</name>
+			<route>accessaudit.page.index</route>
+			<icon>app.svg</icon>
+			<type>link</type>
+		</navigation>
+	</navigations>
+</info>
+```
