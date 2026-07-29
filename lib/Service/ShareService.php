@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\AccessAudit\Service;
 
+use OCP\IGroupManager;
 use OCP\IUserManager;
 use OCP\Share\IManager;
 use OCP\Share\IShare;
@@ -21,11 +22,15 @@ class ShareService {
 	];
 
 	/** @var array<string, string> */
-	private array $displayNameCache = [];
+	private array $userDisplayNameCache = [];
+
+	/** @var array<string, string> */
+	private array $groupDisplayNameCache = [];
 
 	public function __construct(
 		private IManager $shareManager,
 		private IUserManager $userManager,
+		private IGroupManager $groupManager,
 	) {
 	}
 
@@ -93,14 +98,17 @@ class ShareService {
 		$node = $share->getNode();
 		$expiration = $share->getExpirationDate();
 		$created = $share->getShareTime();
+		$shareType = (int)$share->getShareType();
 		$ownerUid = (string)$share->getShareOwner();
+		$recipientId = (string)$share->getSharedWith();
 
 		return [
 			'id' => (string)$share->getFullId(),
-			'shareType' => (int)$share->getShareType(),
-			'shareTypeLabel' => $this->typeLabel((int)$share->getShareType()),
-			'sharedWith' => (string)$share->getSharedWith(),
-			'owner' => $this->resolveDisplayName($ownerUid),
+			'shareType' => $shareType,
+			'shareTypeLabel' => $this->typeLabel($shareType),
+			'sharedWith' => $this->resolveRecipientDisplayName($shareType, $recipientId),
+			'sharedWithId' => $recipientId,
+			'owner' => $this->resolveUserDisplayName($ownerUid),
 			'ownerUid' => $ownerUid,
 			'initiator' => (string)$share->getSharedBy(),
 			'nodeId' => $node->getId(),
@@ -118,21 +126,50 @@ class ShareService {
 		];
 	}
 
-	private function resolveDisplayName(string $uid): string {
+	private function resolveRecipientDisplayName(int $shareType, string $recipientId): string {
+		if ($recipientId === '') {
+			return '';
+		}
+
+		return match ($shareType) {
+			IShare::TYPE_USER => $this->resolveUserDisplayName($recipientId),
+			IShare::TYPE_GROUP => $this->resolveGroupDisplayName($recipientId),
+			default => $recipientId,
+		};
+	}
+
+	private function resolveUserDisplayName(string $uid): string {
 		if ($uid === '') {
 			return '';
 		}
 
-		if (isset($this->displayNameCache[$uid])) {
-			return $this->displayNameCache[$uid];
+		if (isset($this->userDisplayNameCache[$uid])) {
+			return $this->userDisplayNameCache[$uid];
 		}
 
 		$user = $this->userManager->get($uid);
 		$displayName = $user?->getDisplayName();
 
-		return $this->displayNameCache[$uid] = ($displayName !== null && $displayName !== '')
+		return $this->userDisplayNameCache[$uid] = ($displayName !== null && $displayName !== '')
 			? $displayName
 			: $uid;
+	}
+
+	private function resolveGroupDisplayName(string $gid): string {
+		if ($gid === '') {
+			return '';
+		}
+
+		if (isset($this->groupDisplayNameCache[$gid])) {
+			return $this->groupDisplayNameCache[$gid];
+		}
+
+		$group = $this->groupManager->get($gid);
+		$displayName = $group?->getDisplayName();
+
+		return $this->groupDisplayNameCache[$gid] = ($displayName !== null && $displayName !== '')
+			? $displayName
+			: $gid;
 	}
 
 	private function typeLabel(int $type): string {
