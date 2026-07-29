@@ -23,6 +23,10 @@ style('accessaudit', 'accessaudit');
 
 	<section class="accessaudit__toolbar">
 		<input id="accessaudit-search" type="search" placeholder="<?php p($l->t('Search')); ?>">
+		<label class="accessaudit__negate" for="accessaudit-negate">
+			<input id="accessaudit-negate" type="checkbox">
+			<span><?php p($l->t('Exclude matches')); ?></span>
+		</label>
 		<select id="accessaudit-provider">
 			<option value=""><?php p($l->t('All providers')); ?></option>
 			<option value="local">Local</option>
