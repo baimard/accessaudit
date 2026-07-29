@@ -2,30 +2,21 @@
 
 declare(strict_types=1);
 
-namespace OCA\AppTemplate\Controller;
+namespace OCA\AccessAudit\Controller;
 
-use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\ApiRoute;
-use OCP\AppFramework\Http\Attribute\NoAdminRequired;
-use OCP\AppFramework\Http\DataResponse;
-use OCP\AppFramework\OCSController;
+use OCA\AccessAudit\AppInfo\Application;
+use OCP\AppFramework\Controller;
+use OCP\IRequest;
 
 /**
- * @psalm-suppress UnusedClass
+ * Compatibility controller retained for Nextcloud route discovery.
+ *
+ * The AppTemplate skeleton originally declared an attribute route on this
+ * controller. The current application uses dedicated controllers and routes,
+ * but Nextcloud still reflects every controller containing route metadata.
  */
-class ApiController extends OCSController {
-	/**
-	 * An example API endpoint
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{message: string}, array{}>
-	 *
-	 * 200: Data returned
-	 */
-	#[NoAdminRequired]
-	#[ApiRoute(verb: 'GET', url: '/api')]
-	public function index(): DataResponse {
-		return new DataResponse(
-			['message' => 'Hello world!']
-		);
+final class ApiController extends Controller {
+	public function __construct(IRequest $request) {
+		parent::__construct(Application::APP_ID, $request);
 	}
 }
