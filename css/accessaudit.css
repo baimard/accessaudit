@@ -73,6 +73,23 @@
 	max-width: 100%;
 }
 
+.accessaudit__negate {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 34px;
+	padding: 0 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	background: var(--color-main-background);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.accessaudit__negate input[type="checkbox"] {
+	margin: 0;
+}
+
 .accessaudit__toolbar select,
 .accessaudit__toolbar .button {
 	max-width: 100%;
@@ -147,8 +164,13 @@
 	.accessaudit__header button,
 	.accessaudit__toolbar input,
 	.accessaudit__toolbar select,
-	.accessaudit__toolbar .button {
+	.accessaudit__toolbar .button,
+	.accessaudit__negate {
 		width: 100%;
+	}
+
+	.accessaudit__negate {
+		justify-content: flex-start;
 	}
 
 	#accessaudit-table th,
