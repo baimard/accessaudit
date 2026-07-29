@@ -7,7 +7,7 @@ namespace OCA\AccessAudit\Controller;
 use OCA\AccessAudit\AppInfo\Application;
 use OCA\AccessAudit\Service\UserService;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\Attribute\AdminRequired;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -18,14 +18,14 @@ class UserController extends Controller {
 		parent::__construct(Application::APP_ID, $request);
 	}
 
-	#[AdminRequired]
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function list(string $search = '', int $limit = 200, int $offset = 0): DataResponse {
 		$users = $this->userService->findAll($search, $limit, $offset);
 		return new DataResponse(['count' => count($users), 'users' => $users]);
 	}
 
-	#[AdminRequired]
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function get(string $uid): JSONResponse {
 		$user = $this->userService->find($uid);
