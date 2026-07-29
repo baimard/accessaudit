@@ -10,7 +10,7 @@ use OCA\AccessAudit\Service\GroupService;
 use OCA\AccessAudit\Service\ShareService;
 use OCA\AccessAudit\Service\UserService;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\Attribute\AdminRequired;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\IRequest;
@@ -26,19 +26,19 @@ class ExportController extends Controller {
 		parent::__construct(Application::APP_ID, $request);
 	}
 
-	#[AdminRequired]
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function users(string $format = 'csv'): DataDownloadResponse {
 		return $this->download('users', $this->userService->findAll('', 1000), $format);
 	}
 
-	#[AdminRequired]
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function groups(string $format = 'csv'): DataDownloadResponse {
 		return $this->download('groups', $this->groupService->findAll('', 1000), $format);
 	}
 
-	#[AdminRequired]
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function shares(string $format = 'csv'): DataDownloadResponse {
 		return $this->download('shares', $this->shareService->findAll(), $format);
