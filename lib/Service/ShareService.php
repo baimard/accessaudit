@@ -7,6 +7,7 @@ namespace OCA\AccessAudit\Service;
 use OCP\IUserManager;
 use OCP\Share\IManager;
 use OCP\Share\IShare;
+use Throwable;
 
 class ShareService {
 	private const SHARE_TYPES = [
@@ -34,22 +35,48 @@ class ShareService {
 
 		do {
 			$users = $this->userManager->search('', $limit, $offset);
+
 			foreach ($users as $user) {
 				foreach (self::SHARE_TYPES as $type) {
-					foreach ($this->shareManager->getSharesBy($user->getUID(), $type, null, true, -1, 0) as $share) {
-						$key = $share->getFullId();
-						if (isset($seen[$key])) {
+					try {
+						$shares = $this->shareManager->getSharesBy(
+							$user->getUID(),
+							$type,
+							null,
+							true,
+							-1,
+							0,
+						);
+					} catch (Throwable) {
+						// A share provider may not implement every share type.
+						continue;
+					}
+
+					foreach ($shares as $share) {
+						try {
+							$key = (string)$share->getFullId();
+							if (isset($seen[$key])) {
+								continue;
+							}
+
+							$seen[$key] = true;
+							$result[] = $this->normalize($share);
+						} catch (Throwable) {
+							// Ignore stale or inaccessible shares instead of failing the whole audit.
 							continue;
 						}
-						$seen[$key] = true;
-						$result[] = $this->normalize($share);
 					}
 				}
 			}
+
 			$offset += $limit;
 		} while (count($users) === $limit);
 
-		usort($result, static fn (array $a, array $b): int => ($b['createdAt'] ?? '') <=> ($a['createdAt'] ?? ''));
+		usort(
+			$result,
+			static fn (array $a, array $b): int => ($b['createdAt'] ?? '') <=> ($a['createdAt'] ?? ''),
+		);
+
 		return $result;
 	}
 
@@ -61,24 +88,22 @@ class ShareService {
 	/** @return array<string, mixed> */
 	private function normalize(IShare $share): array {
 		$node = $share->getNode();
-		$owner = $share->getShareOwner();
-		$initiator = $share->getSharedBy();
 		$expiration = $share->getExpirationDate();
 		$created = $share->getShareTime();
 
 		return [
-			'id' => $share->getFullId(),
-			'shareType' => $share->getShareType(),
-			'shareTypeLabel' => $this->typeLabel($share->getShareType()),
-			'sharedWith' => $share->getSharedWith(),
-			'owner' => $owner?->getUID(),
-			'initiator' => $initiator?->getUID(),
+			'id' => (string)$share->getFullId(),
+			'shareType' => (int)$share->getShareType(),
+			'shareTypeLabel' => $this->typeLabel((int)$share->getShareType()),
+			'sharedWith' => (string)$share->getSharedWith(),
+			'owner' => (string)$share->getShareOwner(),
+			'initiator' => (string)$share->getSharedBy(),
 			'nodeId' => $node->getId(),
 			'path' => $node->getPath(),
 			'name' => $node->getName(),
 			'nodeType' => $node->getType(),
-			'permissions' => $share->getPermissions(),
-			'permissionLabels' => $this->permissionLabels($share->getPermissions()),
+			'permissions' => (int)$share->getPermissions(),
+			'permissionLabels' => $this->permissionLabels((int)$share->getPermissions()),
 			'passwordProtected' => $share->getPassword() !== null,
 			'token' => $share->getToken(),
 			'note' => $share->getNote(),
@@ -109,6 +134,7 @@ class ShareService {
 				$labels[] = $label;
 			}
 		}
+
 		return $labels;
 	}
 }
