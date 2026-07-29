@@ -126,8 +126,45 @@
 #accessaudit-table th {
 	position: sticky;
 	top: 0;
+	padding: 0;
 	background: var(--color-main-background);
 	z-index: 1;
+}
+
+#accessaudit-table th.is-sorted {
+	background: var(--color-background-hover);
+}
+
+.accessaudit__sort {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	width: 100%;
+	min-height: 42px;
+	margin: 0;
+	padding: 10px 12px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-weight: 600;
+	text-align: left;
+	cursor: pointer;
+}
+
+.accessaudit__sort:hover,
+.accessaudit__sort:focus-visible {
+	background: var(--color-background-hover);
+}
+
+.accessaudit__sort-indicator {
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--color-primary-element);
+	white-space: nowrap;
 }
 
 .accessaudit__badge {
@@ -174,7 +211,8 @@
 	}
 
 	#accessaudit-table th,
-	#accessaudit-table td {
+	#accessaudit-table td,
+	.accessaudit__sort {
 		padding: 8px;
 		font-size: 13px;
 	}
