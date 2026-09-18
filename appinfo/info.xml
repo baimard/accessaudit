@@ -24,7 +24,7 @@
 	<bugs>https://github.com/baimard/accessaudit/issues</bugs>
 	<repository type="git">https://github.com/baimard/accessaudit.git</repository>
 	<dependencies>
-		<nextcloud min-version="33" max-version="34"/>
+		<nextcloud min-version="33" max-version="36"/>
 		<php min-version="8.2"/>
 	</dependencies>
 	<navigations>
