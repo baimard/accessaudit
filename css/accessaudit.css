@@ -4,8 +4,7 @@
 	min-width: 0;
 	height: calc(100vh - 50px);
 	padding: 24px;
-	overflow-x: hidden;
-	overflow-y: auto;
+	overflow: hidden auto;
 	background: var(--color-main-background);
 	color: var(--color-main-text);
 }
@@ -120,7 +119,6 @@
 	vertical-align: top;
 	white-space: normal;
 	overflow-wrap: anywhere;
-	word-break: break-word;
 }
 
 #accessaudit-table th {
@@ -184,7 +182,7 @@
 	color: var(--color-text-maxcontrast);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
 	.accessaudit {
 		padding: 12px;
 	}
@@ -216,4 +214,29 @@
 		padding: 8px;
 		font-size: 13px;
 	}
+}
+
+.accessaudit__csv-options fieldset {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 12px;
+}
+
+.accessaudit__csv-options label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+#accessaudit-export-csv[aria-disabled="true"] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.accessaudit__print-frame {
+	position: fixed;
+	width: 0;
+	height: 0;
+	border: 0;
 }

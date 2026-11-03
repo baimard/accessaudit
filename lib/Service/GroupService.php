@@ -6,8 +6,11 @@ namespace OCA\AccessAudit\Service;
 
 use OCP\IGroupManager;
 
+/** @psalm-api */
 class GroupService {
-	public function __construct(private IGroupManager $groupManager) {
+	public function __construct(
+		private IGroupManager $groupManager,
+	) {
 	}
 
 	/** @return list<array<string, mixed>> */

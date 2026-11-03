@@ -8,6 +8,7 @@ use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
 
+/** @psalm-api */
 class UserService {
 	public function __construct(
 		private IUserManager $userManager,
@@ -17,7 +18,7 @@ class UserService {
 
 	/** @return list<array<string, mixed>> */
 	public function findAll(string $search = '', int $limit = 200, int $offset = 0): array {
-		$users = $this->userManager->search($search, max(1, min($limit, 1000)), max(0, $offset));
+		$users = $this->userManager->searchDisplayName($search, max(1, min($limit, 1000)), max(0, $offset));
 		$result = [];
 
 		foreach ($users as $user) {
@@ -57,13 +58,20 @@ class UserService {
 			return null;
 		}
 
-		foreach ($this->findAll($uid, 50) as $entry) {
-			if ($entry['uid'] === $uid) {
-				return $entry;
-			}
+		$groups = [];
+		foreach ($this->groupManager->getUserGroups($user) as $group) {
+			$groups[] = ['gid' => $group->getGID(), 'displayName' => $group->getDisplayName()];
 		}
-
-		return null;
+		$backend = $user->getBackendClassName();
+		return [
+			'uid' => $user->getUID(),
+			'displayName' => $user->getDisplayName(),
+			'email' => $user->getEMailAddress(),
+			'enabled' => $user->isEnabled(),
+			'backend' => $backend,
+			'provider' => $this->detectProvider($backend),
+			'groups' => $groups,
+		];
 	}
 
 	private function detectProvider(string $backend): string {

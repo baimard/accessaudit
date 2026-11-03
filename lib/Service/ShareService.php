@@ -10,6 +10,7 @@ use OCP\Share\IManager;
 use OCP\Share\IShare;
 use Throwable;
 
+/** @psalm-api */
 class ShareService {
 	private const SHARE_TYPES = [
 		IShare::TYPE_USER,
@@ -42,7 +43,7 @@ class ShareService {
 		$limit = 500;
 
 		do {
-			$users = $this->userManager->search('', $limit, $offset);
+			$users = $this->userManager->searchDisplayName('', $limit, $offset);
 
 			foreach ($users as $user) {
 				foreach (self::SHARE_TYPES as $type) {
@@ -62,7 +63,7 @@ class ShareService {
 
 					foreach ($shares as $share) {
 						try {
-							$key = (string)$share->getFullId();
+							$key = $share->getFullId();
 							if (isset($seen[$key])) {
 								continue;
 							}
@@ -98,30 +99,29 @@ class ShareService {
 		$node = $share->getNode();
 		$expiration = $share->getExpirationDate();
 		$created = $share->getShareTime();
-		$shareType = (int)$share->getShareType();
-		$ownerUid = (string)$share->getShareOwner();
-		$recipientId = (string)$share->getSharedWith();
+		$shareType = $share->getShareType();
+		$ownerUid = $share->getShareOwner();
+		$recipientId = $share->getSharedWith();
 
 		return [
-			'id' => (string)$share->getFullId(),
+			'id' => $share->getFullId(),
 			'shareType' => $shareType,
 			'shareTypeLabel' => $this->typeLabel($shareType),
 			'sharedWith' => $this->resolveRecipientDisplayName($shareType, $recipientId),
 			'sharedWithId' => $recipientId,
 			'owner' => $this->resolveUserDisplayName($ownerUid),
 			'ownerUid' => $ownerUid,
-			'initiator' => (string)$share->getSharedBy(),
+			'initiator' => $share->getSharedBy(),
 			'nodeId' => $node->getId(),
 			'path' => $node->getPath(),
 			'name' => $node->getName(),
 			'nodeType' => $node->getType(),
-			'permissions' => (int)$share->getPermissions(),
-			'permissionLabels' => $this->permissionLabels((int)$share->getPermissions()),
+			'permissions' => $share->getPermissions(),
+			'permissionLabels' => $this->permissionLabels($share->getPermissions()),
 			'passwordProtected' => $share->getPassword() !== null,
-			'token' => $share->getToken(),
 			'note' => $share->getNote(),
 			'label' => $share->getLabel(),
-			'createdAt' => $created?->format(DATE_ATOM),
+			'createdAt' => $created->format(DATE_ATOM),
 			'expiresAt' => $expiration?->format(DATE_ATOM),
 		];
 	}

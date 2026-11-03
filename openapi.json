@@ -1,111 +1,208 @@
 {
     "openapi": "3.0.3",
     "info": {
-        "title": "app_template",
-        "version": "0.0.1",
-        "description": "An example summary",
+        "title": "Nextcloud Access Audit",
+        "version": "0.0.11",
+        "description": "Read-only administrator audit. All routes require an authenticated Nextcloud administrator. Folder paths are relative to the audited user files root, including mounted shares and available external storage.",
         "license": {
             "name": "AGPL-3.0-or-later"
         }
     },
+    "servers": [
+        {
+            "url": "/index.php/apps/accessaudit"
+        }
+    ],
+    "security": [
+        {
+            "basic_auth": []
+        }
+    ],
     "components": {
         "securitySchemes": {
             "basic_auth": {
                 "type": "http",
                 "scheme": "basic"
-            },
-            "bearer_auth": {
-                "type": "http",
-                "scheme": "bearer"
-            }
-        },
-        "schemas": {
-            "OCSMeta": {
-                "type": "object",
-                "required": [
-                    "status",
-                    "statuscode"
-                ],
-                "properties": {
-                    "status": {
-                        "type": "string"
-                    },
-                    "statuscode": {
-                        "type": "integer"
-                    },
-                    "message": {
-                        "type": "string"
-                    },
-                    "totalitems": {
-                        "type": "string"
-                    },
-                    "itemsperpage": {
-                        "type": "string"
-                    }
-                }
             }
         }
     },
     "paths": {
-        "/ocs/v2.php/apps/app_template/api": {
+        "/": {
             "get": {
-                "operationId": "api-index",
-                "summary": "An example API endpoint",
-                "tags": [
-                    "api"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
+                "operationId": "pageIndex",
+                "summary": "Page index",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
                     },
-                    {
-                        "basic_auth": []
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
                     }
-                ],
+                }
+            }
+        },
+        "/api/users": {
+            "get": {
+                "operationId": "userList",
+                "summary": "User list",
                 "parameters": [
                     {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
+                        "name": "search",
+                        "in": "query",
                         "schema": {
-                            "type": "boolean",
-                            "default": true
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Data returned",
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/users/{uid}": {
+            "get": {
+                "operationId": "userGet",
+                "summary": "User get",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/users/{uid}/folders": {
+            "get": {
+                "operationId": "userFolders",
+                "summary": "User folders",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "required": [
-                                        "ocs"
+                                        "folders",
+                                        "complete",
+                                        "unavailable"
                                     ],
                                     "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "message"
-                                                    ],
-                                                    "properties": {
-                                                        "message": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                }
+                                        "folders": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "complete": {
+                                            "type": "boolean",
+                                            "description": "False on storage errors, scan limit (10000 folders) or time limit (10 seconds between storage operations)."
+                                        },
+                                        "unavailable": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
                                             }
                                         }
                                     }
@@ -113,37 +210,401 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
                     "401": {
-                        "description": "Current user is not logged in",
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/groups": {
+            "get": {
+                "operationId": "groupList",
+                "summary": "Group list",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
+                                    "additionalProperties": true
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/groups/{gid}": {
+            "get": {
+                "operationId": "groupGet",
+                "summary": "Group get",
+                "parameters": [
+                    {
+                        "name": "gid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/shares": {
+            "get": {
+                "operationId": "shareList",
+                "summary": "Share list",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/shares/{id}": {
+            "get": {
+                "operationId": "shareGet",
+                "summary": "Share get",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/export/users": {
+            "get": {
+                "operationId": "exportUsers",
+                "summary": "Export users",
+                "parameters": [
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "csv",
+                                "json"
+                            ],
+                            "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "columns[]",
+                        "in": "query",
+                        "style": "form",
+                        "explode": true,
+                        "description": "CSV column keys in desired order; omit for all standard fields. Users may additionally select folders. Incomplete folder inventories return 503. JSON retains all fields.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/export/groups": {
+            "get": {
+                "operationId": "exportGroups",
+                "summary": "Export groups",
+                "parameters": [
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "csv",
+                                "json"
+                            ],
+                            "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "columns[]",
+                        "in": "query",
+                        "style": "form",
+                        "explode": true,
+                        "description": "CSV column keys in desired order; omit for all standard fields. Users may additionally select folders. Incomplete folder inventories return 503. JSON retains all fields.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
+                    }
+                }
+            }
+        },
+        "/api/export/shares": {
+            "get": {
+                "operationId": "exportShares",
+                "summary": "Export shares",
+                "parameters": [
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "csv",
+                                "json"
+                            ],
+                            "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "columns[]",
+                        "in": "query",
+                        "style": "form",
+                        "explode": true,
+                        "description": "CSV column keys in desired order; omit for all standard fields. Users may additionally select folders. Incomplete folder inventories return 503. JSON retains all fields.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid export column"
+                    },
+                    "401": {
+                        "description": "Authentication required (browser requests may redirect to login)"
+                    },
+                    "403": {
+                        "description": "Administrator access required"
+                    },
+                    "404": {
+                        "description": "User, group or share not found"
+                    },
+                    "503": {
+                        "description": "Requested folder export is incomplete"
                     }
                 }
             }
         }
-    },
-    "tags": []
+    }
 }

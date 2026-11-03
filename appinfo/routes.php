@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 return [
 	'routes' => [
-
 		/*
 		 * Main page
 		 */
@@ -26,6 +25,12 @@ return [
 		[
 			'name' => 'user#get',
 			'url' => '/api/users/{uid}',
+			'verb' => 'GET',
+		],
+
+		[
+			'name' => 'user#folders',
+			'url' => '/api/users/{uid}/folders',
 			'verb' => 'GET',
 		],
 

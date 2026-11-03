@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		negate: false,
 		provider: '',
 		sorts: [],
+		csvColumns: {},
 	};
 
 	const table = document.getElementById('accessaudit-table');
@@ -19,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const provider = document.getElementById('accessaudit-provider');
 	const csv = document.getElementById('accessaudit-export-csv');
 	const json = document.getElementById('accessaudit-export-json');
+	const columnPicker = document.getElementById('accessaudit-csv-columns');
+	let loadGeneration = 0;
 
 	const routes = {
 		users: '/apps/accessaudit/api/users',
@@ -34,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			{ key: 'provider', label: 'Provider', type: 'text', value: row => row.provider },
 			{ key: 'backend', label: 'Backend', type: 'text', value: row => row.backend },
 			{ key: 'enabled', label: 'Enabled', type: 'boolean', value: row => Boolean(row.enabled), display: row => row.enabled ? 'Yes' : 'No' },
+			{ key: 'folders', label: 'Accessible folders', type: 'array', value: row => row.folders || [] },
 			{ key: 'groups', label: 'Groups', type: 'array', value: row => (row.groups || []).map(group => group.displayName || group.gid) },
 		],
 		groups: [
@@ -107,10 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function persistView() {
-		let saved = {};
+		let saved;
 		try {
 			saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-		} catch (error) {
+		} catch {
 			saved = {};
 		}
 		saved.section = state.section;
@@ -247,7 +251,28 @@ document.addEventListener('DOMContentLoaded', () => {
 		for (const item of rows) {
 			const row = document.createElement('tr');
 			for (const column of columns[state.section]) {
-				cell(row, column.display ? column.display(item) : column.value(item));
+				if (state.section === 'users' && column.key === 'folders') {
+					const content = document.createElement('div');
+					if (item.folders) {
+						for (const path of item.folders) content.appendChild(badge(path));
+					}
+					if (!item.foldersComplete) {
+						const button = document.createElement('button');
+						button.type = 'button';
+						button.textContent = item.folders ? 'Incomplete — retry' : 'Load folders';
+						button.addEventListener('click', async () => {
+							button.disabled = true;
+							button.textContent = 'Loading…';
+							try { await loadFolders(item); render(); }
+							catch (error) { status.textContent = error.message; button.disabled = false; button.textContent = 'Retry folders'; }
+						});
+						content.appendChild(button);
+					}
+					cell(row, content);
+				} else {
+					cell(row, column.display ? column.display(item) : column.value(item));
+				}
+
 			}
 			tbody.appendChild(row);
 		}
@@ -258,9 +283,26 @@ document.addEventListener('DOMContentLoaded', () => {
 		status.textContent = `${rows.length} result(s)${sortSummary}`;
 	}
 
-	function exportRows(format) {
+	async function exportRows(format) {
+		const section = state.section;
 		const rows = sortedRows();
-		const visibleColumns = columns[state.section];
+		const visibleColumns = columns[state.section].filter(column => format !== 'csv' || state.csvColumns[state.section].includes(column.key));
+		if (!visibleColumns.length) return;
+		if (state.section === 'users' && visibleColumns.some(column => column.key === 'folders')) {
+			csv.setAttribute('aria-disabled', 'true');
+			try {
+				for (const row of rows) {
+					await loadFolders(row);
+					if (!row.foldersComplete) throw new Error(`Incomplete folder audit for ${row.uid}. Retry or exclude the folders column.`);
+				}
+			} catch (error) {
+				status.textContent = error.message;
+				return;
+			} finally {
+				csv.removeAttribute('aria-disabled');
+			}
+		}
+
 		const exported = rows.map(row => Object.fromEntries(visibleColumns.map(column => [column.label, column.value(row)])));
 		let content;
 		let mime;
@@ -272,7 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			extension = 'json';
 		} else {
 			const quote = value => {
-				const normalized = Array.isArray(value) ? value.join(', ') : escapeText(value);
+				let normalized = Array.isArray(value) ? value.join(', ') : escapeText(value);
+				if (/^[\s\uFEFF]*[=+@-]/u.test(normalized) || /^[\t\r\n]/u.test(normalized)) normalized = `'${normalized}`;
 				return `"${normalized.replace(/"/g, '""')}"`;
 			};
 			content = '\uFEFF' + [
@@ -288,37 +331,141 @@ document.addEventListener('DOMContentLoaded', () => {
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
-		link.download = `accessaudit-${state.section}-${timestamp}.${extension}`;
+		link.download = `accessaudit-${section}-${timestamp}.${extension}`;
 		document.body.appendChild(link);
 		link.click();
 		link.remove();
 		URL.revokeObjectURL(url);
 	}
 
+	async function exportPdf() {
+		const section = state.section;
+		const rows = sortedRows();
+		const button = document.getElementById('accessaudit-export-pdf');
+		button.disabled = true;
+		try {
+			if (section === 'users') {
+				for (const row of rows) {
+					await loadFolders(row);
+					if (!row.foldersComplete) throw new Error(`Incomplete folder audit for ${row.uid}. Retry before exporting PDF.`);
+				}
+			}
+			const frame = document.createElement('iframe');
+			frame.className = 'accessaudit__print-frame';
+			frame.title = 'Access Audit PDF';
+			document.body.appendChild(frame);
+			const doc = frame.contentDocument;
+			doc.title = `Access Audit — ${section}`;
+			const sheet = doc.createElement('link');
+			sheet.rel = 'stylesheet';
+			sheet.href = OC.linkTo('accessaudit', 'css/print.css');
+			doc.head.appendChild(sheet);
+			const title = doc.createElement('h1');
+			title.textContent = `Nextcloud Access Audit — ${section}`;
+			const summary = doc.createElement('p');
+			summary.textContent = `${new Date().toLocaleString()} — ${rows.length} result(s) — Search: ${state.search || 'All'}${state.negate ? ' (excluded)' : ''} — Provider: ${state.provider || 'All'}`;
+			const report = doc.createElement('table');
+			const head = doc.createElement('thead');
+			const header = doc.createElement('tr');
+			for (const column of columns[section]) {
+				const th = doc.createElement('th');
+				th.textContent = column.label;
+				header.appendChild(th);
+			}
+			head.appendChild(header);
+			report.appendChild(head);
+			const body = doc.createElement('tbody');
+			for (const row of rows) {
+				const tr = doc.createElement('tr');
+				for (const column of columns[section]) {
+					const td = doc.createElement('td');
+					const value = column.display ? column.display(row) : column.value(row);
+					td.textContent = Array.isArray(value) ? value.join('\n') : escapeText(value);
+					tr.appendChild(td);
+				}
+				body.appendChild(tr);
+			}
+			report.appendChild(body);
+			doc.body.append(title, summary, report);
+			sheet.addEventListener('load', () => {
+				frame.contentWindow.addEventListener('afterprint', () => frame.remove(), { once: true });
+				frame.contentWindow.focus();
+				frame.contentWindow.print();
+			}, { once: true });
+			sheet.addEventListener('error', () => { frame.remove(); status.textContent = 'Unable to prepare PDF stylesheet. Please retry.'; }, { once: true });
+		} catch (error) {
+			status.textContent = error.message;
+		} finally {
+			button.disabled = false;
+		}
+	}
+
+	async function loadFolders(row) {
+		if (row.foldersComplete) return;
+		const response = await fetch(OC.generateUrl(`/apps/accessaudit/api/users/${encodeURIComponent(row.uid)}/folders`), { headers: { Accept: 'application/json' } });
+		if (!response.ok) throw new Error(`Unable to load folders for ${row.uid}: HTTP ${response.status}`);
+		const data = await response.json();
+		row.folders = data.folders;
+		row.foldersComplete = data.complete;
+	}
+
+	function renderColumnPicker() {
+		const available = columns[state.section];
+		state.csvColumns[state.section] ||= available.map(column => column.key);
+		columnPicker.replaceChildren();
+		for (const column of available) {
+			const label = document.createElement('label');
+			const input = document.createElement('input');
+			input.type = 'checkbox';
+			input.value = column.key;
+			input.checked = state.csvColumns[state.section].includes(column.key);
+			input.addEventListener('change', () => {
+				state.csvColumns[state.section] = [...columnPicker.querySelectorAll('input:checked')].map(item => item.value);
+				csv.setAttribute('aria-disabled', String(state.csvColumns[state.section].length === 0));
+			});
+			label.append(input, document.createTextNode(column.label));
+			columnPicker.appendChild(label);
+		}
+		csv.setAttribute('aria-disabled', String(state.csvColumns[state.section].length === 0));
+	}
+
 	async function load() {
+		const generation = ++loadGeneration;
+		const section = state.section;
 		status.textContent = 'Loading…';
+		state.rows = [];
+		table.querySelector('tbody').replaceChildren();
 		table.setAttribute('aria-busy', 'true');
 		try {
-			const response = await fetch(OC.generateUrl(routes[state.section]), { headers: { Accept: 'application/json' } });
-			if (!response.ok) throw new Error(`HTTP ${response.status}`);
-			const data = await response.json();
-			state.rows = data[state.section] || [];
+			const rows = [];
+			let offset = 0;
+			let page;
+			do {
+				const response = await fetch(OC.generateUrl(routes[section]) + `?limit=1000&offset=${offset}`, { headers: { Accept: 'application/json' } });
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				const data = await response.json();
+				if (generation !== loadGeneration) return;
+				page = data[section] || [];
+				rows.push(...page);
+				offset += page.length;
+			} while (section !== 'shares' && page.length === 1000);
+			state.rows = rows;
 			render();
 		} catch (error) {
-			console.error(error);
-			status.textContent = `Unable to load audit data: ${error.message}`;
+			if (generation === loadGeneration) status.textContent = `Unable to load audit data: ${error.message}`;
 		} finally {
-			table.removeAttribute('aria-busy');
+			if (generation === loadGeneration) table.removeAttribute('aria-busy');
 		}
 	}
 
 	function activateSection(section) {
 		state.section = section;
+		renderColumnPicker();
 		document.querySelectorAll('.accessaudit__tab').forEach(tab => tab.classList.toggle('active', tab.dataset.section === section));
 		provider.hidden = section !== 'users';
 
-		let saved = {};
-		try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (error) { saved = {}; }
+		let saved;
+		try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { saved = {}; }
 		const urlSort = new URLSearchParams(window.location.search).get('sort');
 		state.sorts = parseSorts(urlSort || saved.sorts?.[section] || '');
 		persistView();
@@ -326,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	loadSavedState();
+	renderColumnPicker();
 	search.value = state.search;
 	negate.checked = state.negate;
 	provider.value = state.provider;
@@ -339,7 +487,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	negate.addEventListener('change', () => { state.negate = negate.checked; persistView(); render(); });
 	provider.addEventListener('change', () => { state.provider = provider.value; persistView(); render(); });
 	document.getElementById('accessaudit-refresh').addEventListener('click', load);
-	csv.addEventListener('click', event => { event.preventDefault(); exportRows('csv'); });
+	csv.addEventListener('click', event => { event.preventDefault(); if (csv.getAttribute('aria-disabled') !== 'true') exportRows('csv'); });
+	document.getElementById('accessaudit-export-pdf').addEventListener('click', exportPdf);
 	json.addEventListener('click', event => { event.preventDefault(); exportRows('json'); });
 
 	persistView();

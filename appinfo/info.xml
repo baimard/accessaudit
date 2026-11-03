@@ -15,7 +15,7 @@
 		It is designed as a read-only auditing and reporting tool whose access can
 		be restricted to selected groups through Nextcloud application settings.
 	</description>
-	<version>0.0.10</version>
+	<version>0.0.11</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author mail="contact@aimard.pro" homepage="https://github.com/baimard">Benjamin AIMARD</author>
 	<namespace>AccessAudit</namespace>
@@ -24,8 +24,8 @@
 	<bugs>https://github.com/baimard/accessaudit/issues</bugs>
 	<repository type="git">https://github.com/baimard/accessaudit.git</repository>
 	<dependencies>
+		<php min-version="8.2.35"/>
 		<nextcloud min-version="33" max-version="36"/>
-		<php min-version="8.2"/>
 	</dependencies>
 	<navigations>
 		<navigation>
