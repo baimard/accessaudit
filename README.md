@@ -4,7 +4,7 @@ Read-only audit of Nextcloud users, group memberships, mounted folders and activ
 
 ## Requirements
 
-- Nextcloud 33–36 (integration tested on Nextcloud 33).
+- Nextcloud 33–36 (integration tested on Nextcloud 33 and 35).
 - PHP 8.2.35 or later; use a security-patched PHP branch (8.3.36+, 8.4.27+ or 8.5.12+).
 - Node 24 and npm 11 for development checks. Production assets use native JavaScript and CSS; no Vue/Vite compilation is needed.
 
@@ -27,7 +27,7 @@ Storage requiring unavailable user credentials, errors and safety limits (10,000
 - **CSV columns** lets you choose the fields for each tab. At least one column is required. Selecting folders loads the required user trees before downloading. The server CSV endpoints also accept repeated `columns[]` keys, such as `columns[]=uid&columns[]=folders`.
 - **Export PDF** prepares the current tab as a landscape report with all its columns and opens the browser print dialog. Choose **Save as PDF**. This works for Users, Groups and Shares, preserves Unicode, and repeats table headings on each printed page. User reports load folders first.
 - **Export JSON** exports all displayed fields and loads folders for user reports.
-- User/group pagination is fetched in full before presenting the table; server exports also paginate.
+- User/group pagination uses pages of 500 (compatible with Nextcloud 35) and is fetched in full before presenting the table; server exports also paginate.
 
 The page, APIs and exports follow Nextcloud’s application activation settings, including the selected groups. Members of those groups can audit without being administrators; users outside the groups and anonymous visitors cannot access the audit. If the app is enabled for everyone, every authenticated user has access: restrict activation to trusted audit groups in the Nextcloud Applications settings. Public share tokens are omitted. CSV formula prefixes are neutralized; user-controlled values are rendered as text.
 

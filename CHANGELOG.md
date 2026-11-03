@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.13] - 2026-11-03
+
+### Fixed
+
+- Use 500-row API pages to respect Nextcloud 35's default pagination limit and prevent HTTP 400 on user/group lists. Continue pagination through the entire result set.
+- Stop sending unused pagination parameters to the shares endpoint and add regression coverage for a 501-user list.
+
 ## [0.0.12] - 2026-11-03
 
 ### Fixed

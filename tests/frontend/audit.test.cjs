@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { JSDOM } = require('jsdom');
 
-async function setup(folderResult = { folders: ['/', '/Team'], complete: true }) {
+async function setup(folderResult = { folders: ['/', '/Team'], complete: true }, respond = null) {
 	const dom = new JSDOM(`<button class="accessaudit__tab" data-section="users"></button><button class="accessaudit__tab" data-section="groups"></button><button class="accessaudit__tab" data-section="shares"></button>
 		<table id="accessaudit-table"><thead></thead><tbody></tbody></table><div id="accessaudit-status"></div>
 		<input id="accessaudit-search"><input id="accessaudit-negate" type="checkbox"><select id="accessaudit-provider"></select>
@@ -14,6 +14,7 @@ async function setup(folderResult = { folders: ['/', '/Team'], complete: true })
 	window.OC = { generateUrl: path => path, linkTo: (app, path) => `/custom_apps/${app}/${path}` };
 	window.fetch = async path => {
 		calls.push(path);
+		if (respond) return respond(path);
 		return { ok: true, json: async () => path.includes('/folders') ? folderResult : { users: [{ uid: '=cmd', displayName: '<img src=x onerror=alert(1)>', email: 'hidden@example.org', groups: [] }], groups: [] } };
 	};
 	window.Blob = class { constructor(parts) { this.content = parts.join(''); } };
@@ -117,3 +118,21 @@ for (const section of ['groups', 'shares']) {
 		} finally { app.close(); }
 	});
 }
+
+
+test('Nextcloud 35 pagination stays within 500 and loads all users', async () => {
+	const app = await setup(undefined, path => {
+		const params = new URL('https://nextcloud.example.org' + path).searchParams;
+		const limit = Number(params.get('limit'));
+		const offset = Number(params.get('offset'));
+		if (limit > 500) return { ok: false, status: 400 };
+		const users = Array.from({ length: Math.min(limit, Math.max(0, 501 - offset)) }, (_, i) => ({ uid: `user-${offset + i}`, groups: [] }));
+		return { ok: true, json: async () => ({ users }) };
+	});
+	try {
+		assert.equal(app.calls.length, 2);
+		assert.ok(app.calls[0].endsWith('?limit=500&offset=0'));
+		assert.ok(app.calls[1].endsWith('?limit=500&offset=500'));
+		assert.equal(app.window.document.querySelectorAll('tbody tr').length, 501);
+	} finally { app.close(); }
+});

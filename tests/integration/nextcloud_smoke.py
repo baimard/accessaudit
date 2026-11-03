@@ -123,6 +123,8 @@ try:
     for section in ('users', 'groups', 'shares'):
 
         endpoint = '/index.php/apps/accessaudit/api/' + section
+        if section != 'shares':
+            endpoint += '?limit=500&offset=0'
         assert request(endpoint)[0] == 200
         protected.append(endpoint)
     for endpoint in protected:
@@ -154,6 +156,7 @@ try:
 finally:
     if args.container and original_enabled is not None:
         if original_enabled == 'yes':
+            occ('app:disable', 'accessaudit')
             occ('app:enable', 'accessaudit')
         elif original_enabled == 'no':
             occ('app:disable', 'accessaudit')

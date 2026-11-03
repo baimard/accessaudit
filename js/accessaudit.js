@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	'use strict';
 
 	const STORAGE_KEY = 'accessaudit.view.v1';
+	const PAGE_SIZE = 500;
 	const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 	const state = {
 		section: 'users',
@@ -441,14 +442,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			let offset = 0;
 			let page;
 			do {
-				const response = await fetch(OC.generateUrl(routes[section]) + `?limit=1000&offset=${offset}`, { headers: { Accept: 'application/json' } });
+				const url = OC.generateUrl(routes[section]) + (section === 'shares' ? '' : `?limit=${PAGE_SIZE}&offset=${offset}`);
+				const response = await fetch(url, { headers: { Accept: 'application/json' } });
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 				const data = await response.json();
 				if (generation !== loadGeneration) return;
 				page = data[section] || [];
 				rows.push(...page);
 				offset += page.length;
-			} while (section !== 'shares' && page.length === 1000);
+			} while (section !== 'shares' && page.length === PAGE_SIZE);
 			state.rows = rows;
 			render();
 		} catch (error) {
