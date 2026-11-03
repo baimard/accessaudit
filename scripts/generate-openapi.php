@@ -10,7 +10,7 @@ $document = [
 	'info' => [
 		'title' => 'Nextcloud Access Audit',
 		'version' => $version,
-		'description' => 'Read-only audit. All routes require authentication and app access according to the Nextcloud application activation groups. Folder paths are relative to the audited user files root, including mounted shares and available external storage.',
+		'description' => 'Read-only audit. All routes require authentication and app access according to the Nextcloud application activation groups. Folder paths are readable first-level folders relative to the audited user files root, including mounted shares and available external storage; nested folders and the root entry are excluded.',
 		'license' => ['name' => 'AGPL-3.0-or-later'],
 	],
 	'servers' => [['url' => '/index.php/apps/accessaudit']],

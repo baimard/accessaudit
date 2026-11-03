@@ -8,10 +8,7 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use Throwable;
 
-/**
- * Enumerate the user's mounted filesystem, never infer access from outgoing shares.
- * @psalm-api
- */
+/** @psalm-api */
 class FolderService {
 	public function __construct(
 		private IRootFolder $rootFolder,
@@ -26,33 +23,27 @@ class FolderService {
 		$deadline = microtime(true) + 10.0;
 		try {
 			$root = $this->rootFolder->getUserFolder($uid);
-			$pending = [$root];
-			$seen = [];
-			while ($pending !== []) {
+			if (!$root->isReadable()) {
+				return ['folders' => [], 'complete' => false, 'unavailable' => ['/']];
+			}
+			foreach ($root->getDirectoryListing() as $child) {
 				if (count($paths) >= 10000 || microtime(true) > $deadline) {
 					$complete = false;
 					break;
 				}
-				$folder = array_pop($pending);
-				$relative = $root->getRelativePath($folder->getPath());
-				if ($relative === null) {
-					$complete = false;
+				if (!$child instanceof Folder) {
 					continue;
 				}
-				$path = '/' . ltrim($relative, '/');
-				if (isset($seen[$path])) {
-					continue;
-				}
-				$seen[$path] = true;
+				$path = '/';
 				try {
-					if (!$folder->isReadable()) {
+					$relative = $root->getRelativePath($child->getPath());
+					if ($relative === null || $relative === '' || str_contains(trim($relative, '/'), '/')) {
+						$complete = false;
 						continue;
 					}
-					$paths[] = $path;
-					foreach ($folder->getDirectoryListing() as $child) {
-						if ($child instanceof Folder) {
-							$pending[] = $child;
-						}
+					$path = '/' . trim($relative, '/');
+					if ($child->isReadable()) {
+						$paths[] = $path;
 					}
 				} catch (Throwable) {
 					$complete = false;
@@ -63,6 +54,7 @@ class FolderService {
 			$complete = false;
 			$unavailable[] = '/';
 		}
+		$paths = array_values(array_unique($paths));
 		sort($paths, SORT_NATURAL | SORT_FLAG_CASE);
 		return ['folders' => $paths, 'complete' => $complete, 'unavailable' => $unavailable];
 	}

@@ -35,8 +35,8 @@ style('accessaudit', 'accessaudit');
 			<option value="other"><?php p($l->t('Other')); ?></option>
 		</select>
 		<details class="accessaudit__csv-options">
-			<summary><?php p($l->t('CSV columns')); ?></summary>
-			<fieldset id="accessaudit-csv-columns" aria-label="<?php p($l->t('Columns to export')); ?>"></fieldset>
+			<summary><?php p($l->t('CSV / PDF columns')); ?></summary>
+			<fieldset id="accessaudit-export-columns" aria-label="<?php p($l->t('Columns to export')); ?>"></fieldset>
 		</details>
 		<a id="accessaudit-export-csv" class="button" href="#"><?php p($l->t('Export CSV')); ?></a>
 		<button id="accessaudit-export-pdf" type="button"><?php p($l->t('Export PDF')); ?></button>

@@ -141,7 +141,8 @@ try:
     result = json.loads(data)
     assert code == 200 and result['complete'], (code, result)
     assert '/AuditTeam' in result['folders'], result
-    assert '/AuditTeam/Nested' in result['folders'], result
+    assert '/AuditTeam/Nested' not in result['folders']
+    assert '/' not in result['folders'], result
     assert '/OwnerOnly' not in result['folders'], result
     code, data = request('/index.php/apps/accessaudit/api/shares')
     assert all('token' not in share for share in json.loads(data)['shares'])
@@ -152,7 +153,7 @@ try:
     code, data = request('/index.php/apps/accessaudit/')
     assert code == 200 and b'accessaudit-export-pdf' in data
     assert request('/custom_apps/accessaudit/css/print.css')[0] == 200
-    print('PASS: Nextcloud API/page, allowed groups, anonymous/excluded-user denial, real nested group-share folders, CSV selection, PDF asset, token redaction')
+    print('PASS: Nextcloud API/page, allowed groups, anonymous/excluded-user denial, first-level group-share folders, CSV selection, PDF asset, token redaction')
 finally:
     if args.container and original_enabled is not None:
         if original_enabled == 'yes':

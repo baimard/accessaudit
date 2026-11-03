@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		negate: false,
 		provider: '',
 		sorts: [],
-		csvColumns: {},
+		exportColumns: {},
 	};
 
 	const table = document.getElementById('accessaudit-table');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const provider = document.getElementById('accessaudit-provider');
 	const csv = document.getElementById('accessaudit-export-csv');
 	const json = document.getElementById('accessaudit-export-json');
-	const columnPicker = document.getElementById('accessaudit-csv-columns');
+	const columnPicker = document.getElementById('accessaudit-export-columns');
 	let loadGeneration = 0;
 
 	const routes = {
@@ -32,12 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const columns = {
 		users: [
-			{ key: 'uid', label: 'UID', type: 'text', value: row => row.uid },
 			{ key: 'displayName', label: 'Display name', type: 'text', value: row => row.displayName },
 			{ key: 'email', label: 'Email', type: 'text', value: row => row.email },
-			{ key: 'provider', label: 'Provider', type: 'text', value: row => row.provider },
-			{ key: 'backend', label: 'Backend', type: 'text', value: row => row.backend },
-			{ key: 'enabled', label: 'Enabled', type: 'boolean', value: row => Boolean(row.enabled), display: row => row.enabled ? 'Yes' : 'No' },
 			{ key: 'folders', label: 'Accessible folders', type: 'array', value: row => row.folders || [] },
 			{ key: 'groups', label: 'Groups', type: 'array', value: row => (row.groups || []).map(group => group.displayName || group.gid) },
 		],
@@ -241,6 +237,20 @@ document.addEventListener('DOMContentLoaded', () => {
 		thead.appendChild(header);
 	}
 
+	function renderFolderCell(content, item) {
+		content.replaceChildren();
+		if (item.folders) {
+			for (const path of item.folders) content.appendChild(badge(path));
+		}
+		if (!item.foldersComplete) {
+			const note = document.createElement('span');
+			note.textContent = item.folderError || (item.folders ? 'Incomplete folder inventory' : 'Loading folders…');
+			content.appendChild(note);
+		} else if (!item.folders.length) {
+			content.textContent = 'No accessible folders';
+		}
+	}
+
 	function render() {
 		const thead = table.querySelector('thead');
 		const tbody = table.querySelector('tbody');
@@ -254,21 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			for (const column of columns[state.section]) {
 				if (state.section === 'users' && column.key === 'folders') {
 					const content = document.createElement('div');
-					if (item.folders) {
-						for (const path of item.folders) content.appendChild(badge(path));
-					}
-					if (!item.foldersComplete) {
-						const button = document.createElement('button');
-						button.type = 'button';
-						button.textContent = item.folders ? 'Incomplete — retry' : 'Load folders';
-						button.addEventListener('click', async () => {
-							button.disabled = true;
-							button.textContent = 'Loading…';
-							try { await loadFolders(item); render(); }
-							catch (error) { status.textContent = error.message; button.disabled = false; button.textContent = 'Retry folders'; }
-						});
-						content.appendChild(button);
-					}
+					item.folderCell = content;
+					renderFolderCell(content, item);
 					cell(row, content);
 				} else {
 					cell(row, column.display ? column.display(item) : column.value(item));
@@ -287,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	async function exportRows(format) {
 		const section = state.section;
 		const rows = sortedRows();
-		const visibleColumns = columns[state.section].filter(column => format !== 'csv' || state.csvColumns[state.section].includes(column.key));
+		const visibleColumns = columns[state.section].filter(column => format !== 'csv' || state.exportColumns[state.section].includes(column.key));
 		if (!visibleColumns.length) return;
 		if (state.section === 'users' && visibleColumns.some(column => column.key === 'folders')) {
 			csv.setAttribute('aria-disabled', 'true');
@@ -300,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				status.textContent = error.message;
 				return;
 			} finally {
-				csv.removeAttribute('aria-disabled');
+				updateExportButtons();
 			}
 		}
 
@@ -342,10 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	async function exportPdf() {
 		const section = state.section;
 		const rows = sortedRows();
+		const selectedColumns = columns[section].filter(column => state.exportColumns[section].includes(column.key));
+		if (!selectedColumns.length) return;
 		const button = document.getElementById('accessaudit-export-pdf');
 		button.disabled = true;
 		try {
-			if (section === 'users') {
+			if (section === 'users' && selectedColumns.some(column => column.key === 'folders')) {
 				for (const row of rows) {
 					await loadFolders(row);
 					if (!row.foldersComplete) throw new Error(`Incomplete folder audit for ${row.uid}. Retry before exporting PDF.`);
@@ -368,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const report = doc.createElement('table');
 			const head = doc.createElement('thead');
 			const header = doc.createElement('tr');
-			for (const column of columns[section]) {
+			for (const column of selectedColumns) {
 				const th = doc.createElement('th');
 				th.textContent = column.label;
 				header.appendChild(th);
@@ -378,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const body = doc.createElement('tbody');
 			for (const row of rows) {
 				const tr = doc.createElement('tr');
-				for (const column of columns[section]) {
+				for (const column of selectedColumns) {
 					const td = doc.createElement('td');
 					const value = column.display ? column.display(row) : column.value(row);
 					td.textContent = Array.isArray(value) ? value.join('\n') : escapeText(value);
@@ -397,37 +396,71 @@ document.addEventListener('DOMContentLoaded', () => {
 		} catch (error) {
 			status.textContent = error.message;
 		} finally {
-			button.disabled = false;
+			updateExportButtons();
 		}
 	}
 
 	async function loadFolders(row) {
 		if (row.foldersComplete) return;
-		const response = await fetch(OC.generateUrl(`/apps/accessaudit/api/users/${encodeURIComponent(row.uid)}/folders`), { headers: { Accept: 'application/json' } });
-		if (!response.ok) throw new Error(`Unable to load folders for ${row.uid}: HTTP ${response.status}`);
-		const data = await response.json();
-		row.folders = data.folders;
-		row.foldersComplete = data.complete;
+		if (row.folderPromise) return row.folderPromise;
+		row.folderPromise = (async () => {
+			const response = await fetch(OC.generateUrl(`/apps/accessaudit/api/users/${encodeURIComponent(row.uid)}/folders`), { headers: { Accept: 'application/json' } });
+			if (!response.ok) throw new Error(`Unable to load folders for ${row.displayName || row.uid}: HTTP ${response.status}`);
+			const data = await response.json();
+			row.folders = data.folders;
+			row.foldersComplete = data.complete;
+			delete row.folderError;
+		})();
+		try { await row.folderPromise; }
+		finally { delete row.folderPromise; }
+	}
+
+	async function loadAllFolders(rows, generation) {
+		let renderTimer;
+		const queue = [...rows];
+		const worker = async () => {
+			while (queue.length && generation === loadGeneration) {
+				const row = queue.shift();
+				try { await loadFolders(row); }
+				catch (error) { row.folderError = error.message; }
+				if (generation === loadGeneration && row.folderCell) renderFolderCell(row.folderCell, row);
+				if (generation === loadGeneration && (state.search || state.sorts.some(sort => sort.key === 'folders')) && !renderTimer) {
+					renderTimer = setTimeout(() => {
+						renderTimer = null;
+						if (generation === loadGeneration) render();
+					}, 150);
+				}
+			}
+		};
+		await Promise.all(Array.from({ length: 4 }, worker));
+		if (renderTimer) clearTimeout(renderTimer);
+		if (generation === loadGeneration) render();
+	}
+
+	function updateExportButtons() {
+		const empty = state.exportColumns[state.section].length === 0;
+		csv.setAttribute('aria-disabled', String(empty));
+		document.getElementById('accessaudit-export-pdf').disabled = empty;
 	}
 
 	function renderColumnPicker() {
 		const available = columns[state.section];
-		state.csvColumns[state.section] ||= available.map(column => column.key);
+		state.exportColumns[state.section] ||= available.map(column => column.key);
 		columnPicker.replaceChildren();
 		for (const column of available) {
 			const label = document.createElement('label');
 			const input = document.createElement('input');
 			input.type = 'checkbox';
 			input.value = column.key;
-			input.checked = state.csvColumns[state.section].includes(column.key);
+			input.checked = state.exportColumns[state.section].includes(column.key);
 			input.addEventListener('change', () => {
-				state.csvColumns[state.section] = [...columnPicker.querySelectorAll('input:checked')].map(item => item.value);
-				csv.setAttribute('aria-disabled', String(state.csvColumns[state.section].length === 0));
+				state.exportColumns[state.section] = [...columnPicker.querySelectorAll('input:checked')].map(item => item.value);
+				updateExportButtons();
 			});
 			label.append(input, document.createTextNode(column.label));
 			columnPicker.appendChild(label);
 		}
-		csv.setAttribute('aria-disabled', String(state.csvColumns[state.section].length === 0));
+		updateExportButtons();
 	}
 
 	async function load() {
@@ -453,6 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			} while (section !== 'shares' && page.length === PAGE_SIZE);
 			state.rows = rows;
 			render();
+			if (section === 'users') loadAllFolders(rows, generation);
 		} catch (error) {
 			if (generation === loadGeneration) status.textContent = `Unable to load audit data: ${error.message}`;
 		} finally {

@@ -19,13 +19,13 @@ sudo -u www-data php occ app:enable accessaudit
 
 ## Audit and exports
 
-The Users tab has an **Accessible folders** column. Use **Load folders** to enumerate a user's actual Nextcloud files tree, recursively, including personal folders, received user/group shares and external mounts available to that user. Paths are relative to the user's files root, not physical server disk paths. Files themselves are not read. Unreadable folders are excluded.
+The Users tab has an **Accessible folders** column. Folders load automatically with up to four asynchronous requests at a time. Only readable first-level folders are listed, including personal folders, received user/group shares and external mounts available to that user. Paths are relative to the user's files root, not physical server disk paths. Files themselves are not read. Unreadable folders are excluded.
 
-Storage requiring unavailable user credentials, errors and safety limits (10,000 folders or 10 seconds checked between storage operations) produce an explicit incomplete result. A slow storage request can exceed the time budget. CSV/PDF exports requiring folders stop if the inventory is incomplete; they never silently present partial results as complete. Folder loading is on demand to avoid scanning every account on page load.
+Storage requiring unavailable user credentials, errors and safety limits (10,000 folders or 10 seconds checked between storage operations) produce an explicit incomplete result. A slow storage request can exceed the time budget. CSV/PDF exports requiring folders stop if the inventory is incomplete; they never silently present partial results as complete. Nested folders and the files-root entry are excluded. Storage failures remain visible; Refresh retries the inventory.
 
 - Search, exclusion, provider filters and sorting apply to browser exports.
-- **CSV columns** lets you choose the fields for each tab. At least one column is required. Selecting folders loads the required user trees before downloading. The server CSV endpoints also accept repeated `columns[]` keys, such as `columns[]=uid&columns[]=folders`.
-- **Export PDF** prepares the current tab as a landscape report with all its columns and opens the browser print dialog. Choose **Save as PDF**. This works for Users, Groups and Shares, preserves Unicode, and repeats table headings on each printed page. User reports load folders first.
+- **CSV / PDF columns** lets you choose the fields shared by both export formats for each tab. At least one column is required. Selecting folders loads the required user trees before downloading. The server CSV endpoints also accept repeated `columns[]` keys, such as `columns[]=uid&columns[]=folders`.
+- **Export PDF** prepares the current tab as a landscape report with the selected columns and opens the browser print dialog. Choose **Save as PDF**. This works for Users, Groups and Shares, preserves Unicode, and repeats table headings on each printed page. Reports wait for folders only when that column is selected. The Users table and browser exports omit UID, Provider, Backend and Enabled.
 - **Export JSON** exports all displayed fields and loads folders for user reports.
 - User/group pagination uses pages of 500 (compatible with Nextcloud 35) and is fetched in full before presenting the table; server exports also paginate.
 
@@ -47,7 +47,7 @@ npm test
 php scripts/generate-openapi.php
 ```
 
-`npm run build` validates the shipped native JavaScript. It does not overwrite the committed assets. PHPUnit uses the locked Nextcloud API definitions, with one test-only compatibility interface omitted by that package, and does not require a live server. Integration tests exercise a real disposable Nextcloud, including nested group-share folders and application group permissions:
+`npm run build` validates the shipped native JavaScript. It does not overwrite the committed assets. PHPUnit uses the locked Nextcloud API definitions, with one test-only compatibility interface omitted by that package, and does not require a live server. Integration tests exercise a real disposable Nextcloud, including first-level group-share folders and application group permissions:
 
 ```sh
 python3 tests/integration/nextcloud_smoke.py \
