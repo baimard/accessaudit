@@ -11,6 +11,7 @@ use OCA\AccessAudit\Service\GroupService;
 use OCA\AccessAudit\Service\ShareService;
 use OCA\AccessAudit\Service\UserService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -30,6 +31,7 @@ class ExportController extends Controller {
 	}
 
 	/** @param list<string> $columns */
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function users(string $format = 'csv', array $columns = []): DataDownloadResponse|JSONResponse {
 		$rows = [];
@@ -52,6 +54,7 @@ class ExportController extends Controller {
 	}
 
 	/** @param list<string> $columns */
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function groups(string $format = 'csv', array $columns = []): DataDownloadResponse|JSONResponse {
 		$rows = [];
@@ -65,6 +68,7 @@ class ExportController extends Controller {
 	}
 
 	/** @param list<string> $columns */
+	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function shares(string $format = 'csv', array $columns = []): DataDownloadResponse|JSONResponse {
 		return $this->download('shares', $this->shareService->findAll(), $format, $columns);

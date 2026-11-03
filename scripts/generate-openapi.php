@@ -10,7 +10,7 @@ $document = [
 	'info' => [
 		'title' => 'Nextcloud Access Audit',
 		'version' => $version,
-		'description' => 'Read-only administrator audit. All routes require an authenticated Nextcloud administrator. Folder paths are relative to the audited user files root, including mounted shares and available external storage.',
+		'description' => 'Read-only audit. All routes require authentication and app access according to the Nextcloud application activation groups. Folder paths are relative to the audited user files root, including mounted shares and available external storage.',
 		'license' => ['name' => 'AGPL-3.0-or-later'],
 	],
 	'servers' => [['url' => '/index.php/apps/accessaudit']],
@@ -63,7 +63,7 @@ foreach ($routes['routes'] as $route) {
 			'200' => ['description' => 'Success', 'content' => $content],
 			'400' => ['description' => 'Invalid export column'],
 			'401' => ['description' => 'Authentication required (browser requests may redirect to login)'],
-			'403' => ['description' => 'Administrator access required'],
+			'403' => ['description' => 'Application access denied for this user'],
 			'404' => ['description' => 'User, group or share not found'],
 			'503' => ['description' => 'Requested folder export is incomplete'],
 		],

@@ -2,8 +2,8 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Nextcloud Access Audit",
-        "version": "0.0.11",
-        "description": "Read-only administrator audit. All routes require an authenticated Nextcloud administrator. Folder paths are relative to the audited user files root, including mounted shares and available external storage.",
+        "version": "0.0.12",
+        "description": "Read-only audit. All routes require authentication and app access according to the Nextcloud application activation groups. Folder paths are relative to the audited user files root, including mounted shares and available external storage.",
         "license": {
             "name": "AGPL-3.0-or-later"
         }
@@ -50,7 +50,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -107,7 +107,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -151,7 +151,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -217,7 +217,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -274,7 +274,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -318,7 +318,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -353,7 +353,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -397,7 +397,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -463,7 +463,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -529,7 +529,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"
@@ -595,7 +595,7 @@
                         "description": "Authentication required (browser requests may redirect to login)"
                     },
                     "403": {
-                        "description": "Administrator access required"
+                        "description": "Application access denied for this user"
                     },
                     "404": {
                         "description": "User, group or share not found"

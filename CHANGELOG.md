@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.12] - 2026-11-03
+
+### Fixed
+
+- Restore access for the groups selected in Nextcloud application settings instead of requiring administrator status. All audit routes and exports retain Nextcloud authentication and native application group checks.
+- Add real integration coverage for group members, excluded users and anonymous visitors.
+
 ## [0.0.11] - 2026-11-03
 
 ### Added

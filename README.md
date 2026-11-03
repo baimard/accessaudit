@@ -1,6 +1,6 @@
 # Nextcloud Access Audit
 
-Read-only administrator audit of Nextcloud users, group memberships, mounted folders and active shares.
+Read-only audit of Nextcloud users, group memberships, mounted folders and active shares.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ Storage requiring unavailable user credentials, errors and safety limits (10,000
 - **Export JSON** exports all displayed fields and loads folders for user reports.
 - User/group pagination is fetched in full before presenting the table; server exports also paginate.
 
-Only authenticated Nextcloud administrators can access the audit page, APIs and downloads. Public share tokens are omitted. CSV formula prefixes are neutralized; user-controlled values are rendered as text. Deployments previously using the unguarded endpoints must account for this administrator-only restriction.
+The page, APIs and exports follow Nextcloud’s application activation settings, including the selected groups. Members of those groups can audit without being administrators; users outside the groups and anonymous visitors cannot access the audit. If the app is enabled for everyone, every authenticated user has access: restrict activation to trusted audit groups in the Nextcloud Applications settings. Public share tokens are omitted. CSV formula prefixes are neutralized; user-controlled values are rendered as text.
 
 ## Development
 
@@ -47,15 +47,16 @@ npm test
 php scripts/generate-openapi.php
 ```
 
-`npm run build` validates the shipped native JavaScript. It does not overwrite the committed assets. PHPUnit uses the locked Nextcloud API definitions, with one test-only compatibility interface omitted by that package, and does not require a live server. Integration tests exercise a real disposable Nextcloud, including nested group-share folders and administrator guards:
+`npm run build` validates the shipped native JavaScript. It does not overwrite the committed assets. PHPUnit uses the locked Nextcloud API definitions, with one test-only compatibility interface omitted by that package, and does not require a live server. Integration tests exercise a real disposable Nextcloud, including nested group-share folders and application group permissions:
 
 ```sh
 python3 tests/integration/nextcloud_smoke.py \
   --base-url http://127.0.0.1:8080 \
-  --env-file /path/to/local-nextcloud.env
+  --env-file /path/to/local-nextcloud.env \
+  --container accessaudit-nextcloud
 ```
 
-The env file must contain `NEXTCLOUD_ADMIN_USER` and `NEXTCLOUD_ADMIN_PASSWORD`. Use a disposable instance: the test creates uniquely named users and a group, then deletes its fixtures. Do not commit this file or credentials.
+The env file must contain `NEXTCLOUD_ADMIN_USER` and `NEXTCLOUD_ADMIN_PASSWORD`. The optional `--container` selects a local Docker container to test activation-group restrictions; it restarts that disposable container to refresh the web cache after CLI activation changes, and restores the previous activation configuration afterwards. Use a disposable instance: the test creates uniquely named users and a group, then deletes its fixtures. Do not commit this file or credentials.
 
 CI runs on standard GitHub runners with Node 24 and PHP 8.2/8.4. It checks unit/UI tests, formatting, static analysis, the generated OpenAPI document and locked dependency vulnerabilities. The old template jobs referenced missing `src`, Vite configuration and an OpenAPI command, used unavailable organization-specific runners, and scheduled bots required an unconfigured personal token. Dependabot now manages updates without auto-approval or auto-merge. See [openapi.json](openapi.json) for the actual routes.
 
